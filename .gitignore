@@ -1,0 +1,15 @@
+.idea/*
+!.idea/dictionaries/
+.idea/jsLinters/*
+!.idea/jsLinters/
+!.idea/jsLinters/eslint.xml
+!.idea/jsLibraryMappings.xml
+!.idea/modules.xml
+!.idea/node-fuse-demo.iml
+.vscode/
+coverage/
+dist/
+mnt/
+node_modules/
+.DS_Store
+*.log

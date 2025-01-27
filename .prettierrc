@@ -1,0 +1,12 @@
+{
+  "plugins": [
+    "prettier-plugin-jsdoc"
+  ],
+  "jsdocPrintWidth": 100,
+  "jsdocSeparateTagGroups": true,
+  "printWidth": 120,
+  "semi": false,
+  "singleQuote": true,
+  "tabWidth": 4,
+  "tsdoc": true
+}

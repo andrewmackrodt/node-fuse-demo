@@ -1,0 +1,85 @@
+name: main
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+
+env:
+  PRIMARY_NODE_VERSION: 20
+
+jobs:
+  check-types:
+    name: check-types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node.js v${{ env.PRIMARY_NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.PRIMARY_NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install package dependencies
+        run: pnpm install --frozen-lockfile --strict-peer-dependencies --ignore-scripts
+
+      - name: Check for Type Errors
+        run: pnpm build:check
+
+  eslint:
+    name: eslint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node.js v${{ env.PRIMARY_NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.PRIMARY_NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install package dependencies
+        run: pnpm install --frozen-lockfile --strict-peer-dependencies --ignore-scripts
+
+      - name: Check for ESLint Errors
+        run: pnpm lint:check
+
+  license-checker:
+    name: license-checker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node.js v${{ env.PRIMARY_NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.PRIMARY_NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install package dependencies
+        run: pnpm install --frozen-lockfile --strict-peer-dependencies --ignore-scripts
+
+      - name: Install license-checker
+        run: pnpm install -g license-checker
+
+      - name: Check for license violations
+        run: license-checker --excludePackages "$(echo $(npm pkg get name)@$(npm pkg get version) | sed 's/\"//g')" --production --unknown --onlyAllow='Apache-2.0;BSD;CC0-1.0;ISC;MIT;MPL-2.0;UNLICENSED'

@@ -1,0 +1,20 @@
+<component name="ProjectDictionaryState">
+  <dictionary name="default">
+    <words>
+      <w>fgetattr</w>
+      <w>fsyncdir</w>
+      <w>getxattr</w>
+      <w>listxattr</w>
+      <w>mknod</w>
+      <w>noappledouble</w>
+      <w>noapplexattr</w>
+      <w>releasedir</w>
+      <w>removexattr</w>
+      <w>rval</w>
+      <w>setxattr</w>
+      <w>statfs</w>
+      <w>utimens</w>
+      <w>volname</w>
+    </words>
+  </dictionary>
+</component>

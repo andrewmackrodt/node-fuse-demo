@@ -1,0 +1,103 @@
+diff --git a/fuse-bindings.cc b/fuse-bindings.cc
+index 74c4fc11e75d2c80fc7ae261647f76d2546d5fe5..606e943673a4dbe8da56793d6ae7eda9504a0edc 100644
+--- a/fuse-bindings.cc
++++ b/fuse-bindings.cc
+@@ -1333,7 +1333,11 @@ NAN_METHOD(Unmount) {
+ 
+ void Init(v8::Local<v8::Object> exports) {
+ 
++  #if defined NODE_MODULE_VERSION && NODE_MODULE_VERSION < 93
+   v8::Local<v8::Context> context = exports->CreationContext();
++  #else
++  v8::Local<v8::Context> context = exports->GetCreationContext().ToLocalChecked();
++  #endif
+ 
+   exports->Set(context, Nan::New("setCallback").ToLocalChecked(), Nan::New<FunctionTemplate>(SetCallback)->GetFunction(context).ToLocalChecked());
+   exports->Set(context, Nan::New("setBuffer").ToLocalChecked(), Nan::New<FunctionTemplate>(SetBuffer)->GetFunction(context).ToLocalChecked());
+diff --git a/index.d.ts b/index.d.ts
+index e062583c9b0c67c817bfbbd3372257fce57492c0..9cedd42cb670b09fc9c3664c66dd40c304c29891 100644
+--- a/index.d.ts
++++ b/index.d.ts
+@@ -1,8 +1,8 @@
+ 
+-declare module 'fuse-bindings' {
++declare module 'node-fuse-bindings' {
+ 
+ 	function mount(mountPoint: string, ops: MountOptions,
+-		cb: (code: number) => void): void;
++		cb: (err?: Error) => void): void;
+ 
+ 	interface MountOptions {
+ 	}
+@@ -41,7 +41,7 @@ declare module 'fuse-bindings' {
+ 		 * @param path 
+ 		 * @param cb accepts a fs stat object after the return code.
+ 		 */
+-		statfs?(path: string, cb: (code: number, fsStat: FSStat) => void): void;
++		statfs?(path: string, cb: (code: number, fsStat?: FSStat) => void): void;
+ 
+ 		/**
+ 		 * Called when a path is being stat'ed. 
+@@ -58,7 +58,7 @@ declare module 'fuse-bindings' {
+ 		 * @param cb 
+ 		 */
+ 		fgetattr?(path: string, fd: number,
+-			cb: (code: number, stats: Stats) => void): void;
++			cb: (code: number, stats?: Stats) => void): void;
+ 
+ 		/**
+ 		 * Called when a file descriptor is being flushed.
+@@ -94,7 +94,7 @@ declare module 'fuse-bindings' {
+ 		 * @param cb accepts an array of file/directory names after the return
+ 		 * code.
+ 		 */
+-		readdir?(path: string, cb: (code: number, lst: string[]) => void): void;
++		readdir?(path: string, cb: (code: number, lst?: string[]) => void): void;
+ 
+ 		/**
+ 		 * Called when a path is being truncated to a specific size.
+@@ -122,7 +122,7 @@ declare module 'fuse-bindings' {
+ 		 * the return code.
+ 		 */
+ 		readlink?(path: string,
+-			cb: (code: number|null, targetPathname: string) => void): void;
++			cb: (code: number, targetPathname?: string) => void): void;
+ 		
+ 		/**
+ 		 * Called when ownership of a path is being changed.
+@@ -193,7 +193,7 @@ declare module 'fuse-bindings' {
+ 		 * was zero.
+ 		 */
+ 		listxattr?(path: string, buffer: Buffer, length: number,
+-			cb: (code: number, reqBufSize: number) => void): void;
++			cb: (code: number, reqBufSize?: number) => void): void;
+ 
+ 		/**
+ 		 * Called when an extended attribute is being removed.
+@@ -210,7 +210,7 @@ declare module 'fuse-bindings' {
+ 		 * @param cb accepts a file descriptor after the return code.
+ 		 */
+ 		open?(path: string, flags: number,
+-			cb: (code: number, fd: number) => void): void;
++			cb: (code: number, fd?: number) => void): void;
+ 
+ 		
+ 		/**
+@@ -221,7 +221,7 @@ declare module 'fuse-bindings' {
+ 		 * @param cb accepts a file descriptor after the return code.
+ 		 */
+ 		opendir?(path: string, flags: number,
+-			cb: (code: number, fd: number) => void): void;
++			cb: (code: number, fd?: number) => void): void;
+ 		
+ 		/**
+ 		 * Called when contents of a file is being read. You should write the
+@@ -386,7 +386,7 @@ declare module 'fuse-bindings' {
+ 		birthtime: Date;
+ 	}
+ 
+-	function unmount(mountPoint: string, cb: (code: number) => void): void;
++	function unmount(mountPoint: string, cb: (err?: Error) => void): void;
+ 
+ 	function errno(code: string): number;
+ 
