@@ -18,19 +18,19 @@ export interface NodeOptions {
 }
 
 export abstract class Node {
-    readonly atime: number
     readonly blksize: number
     readonly ctime: number
     readonly dev: number
-    readonly gid: number
-    readonly mtime: number
     readonly parent?: Directory
     readonly rdev: number
-    readonly uid: number
+    atime: number
+    gid: number
+    mtime: number
+    uid: number
 
     protected constructor(
         readonly ino: number,
-        readonly mode: number,
+        public mode: number,
         readonly name: string,
         options: NodeOptions = {},
     ) {

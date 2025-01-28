@@ -1,9 +1,11 @@
+import { basename, dirname } from 'node:path'
 import type { FSStat, Stats as IFileStat } from 'node-fuse-bindings'
-import { counter } from '../../utils/counter'
-import { IllegalOperationOnDirectoryError, NotADirectoryError } from '../../utils/errors'
 import type { FileSystemAdapter } from '../FileSystemAdapter'
 import { Directory } from './structs/Directory'
 import { File } from './structs/File'
+import { S_IFREG } from '../../utils/constants'
+import { counter } from '../../utils/counter'
+import { FileExistsError, IllegalOperationOnDirectoryError, NotADirectoryError } from '../../utils/errors'
 
 const incInoSeq = counter(1000000).next
 const incFdSeq = counter(4).next
@@ -28,32 +30,64 @@ Generation time: ${time}
  * development purposes.
  */
 export class TestFileSystemAdapter implements FileSystemAdapter {
+    async chmod(path: string, mode: number): Promise<void> {
+        const node = rootDirectory.find(path)
+        node.mode = mode
+    }
+
+    async chown(path: string, uid: number, gid: number): Promise<void> {
+        const node = rootDirectory.find(path)
+        node.uid = uid
+        node.gid = gid
+    }
+
+    async create(path: string, mode: number): Promise<void> {
+        const { name, parent } = this.getParentAndName(path)
+        const file = new File(incInoSeq(), name, parent, { perm: mode & ~S_IFREG })
+        parent.files.set(name, file)
+    }
+
+    async fgetattr(path: string, fd: number): Promise<IFileStat> {
+        return await this.getattr(path)
+    }
+
+    async ftruncate(path: string, fd: number, size: number): Promise<void> {
+        return await this.truncate(path, size)
+    }
+
     async getattr(path: string): Promise<IFileStat> {
         return rootDirectory.find(path).stat
     }
 
+    async mkdir(path: string, mode: number): Promise<void> {
+        const { name, parent } = this.getParentAndName(path)
+        const directory = new Directory(incInoSeq(), name, { parent, perm: mode & ~S_IFREG })
+        parent.files.set(name, directory)
+    }
+
     async open(path: string, flags: number): Promise<number> {
-        const file = rootDirectory.find(path)
-        if (file instanceof Directory) {
+        const node = rootDirectory.find(path)
+        if (node instanceof Directory) {
             throw new IllegalOperationOnDirectoryError(path)
         }
+        node.atime = Date.now()
         return incFdSeq()
     }
 
     async read(path: string, fd: number, buffer: Buffer, length: number, position: number): Promise<number> {
-        const file = rootDirectory.find(path)
-        if (file instanceof Directory) {
+        const node = rootDirectory.find(path)
+        if (node instanceof Directory) {
             throw new IllegalOperationOnDirectoryError(path)
         }
-        return file.buffer.copy(buffer, 0, position, position + length)
+        return node.buffer.copy(buffer, 0, position, position + length)
     }
 
     async readdir(path: string): Promise<string[]> {
-        const directory = rootDirectory.find(path)
-        if (directory instanceof File) {
+        const node = rootDirectory.find(path)
+        if (node instanceof File) {
             throw new NotADirectoryError(path)
         }
-        return directory.listFiles()
+        return node.listFiles()
     }
 
     async statfs(path: string): Promise<FSStat> {
@@ -70,5 +104,58 @@ export class TestFileSystemAdapter implements FileSystemAdapter {
             fsid: 123456, // File system ID
             namemax: 255, // Maximum filename length
         }
+    }
+
+    async truncate(path: string, size: number): Promise<void> {
+        const node = rootDirectory.find(path)
+        if (node instanceof Directory) {
+            throw new IllegalOperationOnDirectoryError(path)
+        }
+        const newBuffer = Buffer.alloc(size)
+        node.buffer.copy(newBuffer)
+        node.buffer = newBuffer
+        node.mtime = Date.now()
+        node.atime = node.mtime
+    }
+
+    async utimens(path: string, atime: number, mtime: number): Promise<void> {
+        const node = rootDirectory.find(path)
+        node.atime = atime
+        node.mtime = mtime
+    }
+
+    async write(path: string, fd: number, buffer: Buffer, length: number, position: number): Promise<number> {
+        const node = rootDirectory.find(path)
+        if (node instanceof Directory) {
+            throw new IllegalOperationOnDirectoryError(path)
+        }
+        if (node.buffer.length < position + length) {
+            const newBuffer = Buffer.alloc(node.buffer.length + length)
+            node.buffer.copy(newBuffer)
+            node.buffer = newBuffer
+        }
+        const written = buffer.copy(node.buffer, position, 0, length)
+        node.mtime = Date.now()
+        node.atime = node.mtime
+        return written
+    }
+
+    protected getParentAndName(path: string) {
+        let parent: Directory
+        const parentPath = dirname(path)
+        if (parentPath === path) {
+            parent = rootDirectory
+        } else {
+            const maybeDirectory = rootDirectory.find(parentPath)
+            if (!(maybeDirectory instanceof Directory)) {
+                throw new NotADirectoryError(path)
+            }
+            parent = maybeDirectory
+        }
+        const name = basename(path)
+        if (parent.files.has(name)) {
+            throw new FileExistsError(name)
+        }
+        return { name, parent }
     }
 }

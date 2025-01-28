@@ -47,17 +47,16 @@ export interface FileSystemAdapter {
     chown?(path: string, uid: number, gid: number): Promise<void>
 
     /**
-     * Creates a resource at the specified path with the given mode.
+     * Creates a new file at the specified path with the given mode.
      *
-     * @param {string} path - The path where the resource will be created.
-     * @param {number} mode - The mode or permissions to set for the new resource.
+     * @param {string} path - The file system path where the file will be created.
+     * @param {number} mode - The mode to set for the created file.
      *
-     * @returns {Promise<number>} A promise that resolves to a numeric value representing the
-     *   success of the operation.
+     * @returns {Promise<void>} A promise that resolves when the creation is complete.
      *
      * @throws {FuseError}
      */
-    create?(path: string, mode: number): Promise<number>
+    create?(path: string, mode: number): Promise<void>
 
     /**
      * This method is called before the filesystem is unmounted.

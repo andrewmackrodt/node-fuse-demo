@@ -13,6 +13,12 @@ export class FuseError extends Error {
     }
 }
 
+export class FileExistsError extends FuseError {
+    constructor(readonly file: string) {
+        super(ErrorCodes.EEXIST, `file exists: ${file}`)
+    }
+}
+
 export class IllegalOperationOnDirectoryError extends FuseError {
     constructor(readonly file: string) {
         super(ErrorCodes.EISDIR, `illegal operation on a directory: ${file}`)

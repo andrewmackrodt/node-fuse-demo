@@ -87,7 +87,7 @@ export class FuseFileSystemAdapterProxy implements MountOptions {
         this.logger.debug(`Creating file at path: ${path} with mode: ${mode}`)
 
         return await this.adapter.create!(path, mode)
-            .then((code) => cb(code))
+            .then(() => cb(0))
             .catch((err) => this._errorHandler(err, cb))
     }
 
